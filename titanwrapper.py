@@ -165,9 +165,9 @@ def runWrapper(inputfile):
         if cfg['PreEntry']['Orbit_construct'] == 'CIRCULAR':
             state, period = buildCircular(body='',
                                           altitude=float(cfg['PreEntry']['Orbit_altitude']),
-                                          lat = float(cfg['PreEntry']['Orbit_latitude']),
-                                          lon = float(cfg['PreEntry']['Orbit_longitude']),
-                                          inclination = float(cfg['PreEntry']['Orbit_inclination'])
+                                          lat=float(cfg['PreEntry']['Orbit_latitude']),
+                                          lon=float(cfg['PreEntry']['Orbit_longitude']),
+                                          inclination=float(cfg['PreEntry']['Orbit_inclination'])
                                           )
         if cfg['PreEntry']['Orbit_construct'] == 'STATE':
             state = cfg['PreEntry']['Orbit_state']
@@ -197,13 +197,13 @@ def runWrapper(inputfile):
     cfg_orb['Propagator']['Altitude_criterion']= '1000'
     cfg_orb['Propagator']['Critical_altitude']= '110'
 
-    dir = os.getcwd()
+    directory = os.getcwd()
 
-    if not os.path.exists(dir + '/DTOURtemp'):
-        os.makedirs(dir + '/DTOURtemp')
+    if not os.path.exists(directory + '/DTOURtemp'):
+        os.makedirs(directory + '/DTOURtemp')
 
     # Then write to a temp cfg file
-    filepath = dir + '/DTOURtemp/infTemp.cfg'
+    filepath = directory + '/DTOURtemp/infTemp.cfg'
     with open(filepath, 'w') as configfile:
         cfg_orb.write(configfile)
     print('\n Running forecast simulation to determine if re-entry occurs in the near future\n')
@@ -258,16 +258,16 @@ def runWrapper(inputfile):
         cfg_titan['Trajectory']['Latitude'] = str(latitude)
         cfg_titan['Trajectory']['Longitude'] = str(longitude)
 
-        dir = os.getcwd()
+        directory = os.getcwd()
 
-        if not dir[-6:] == '/TITAN':
+        if not directory[-6:] == '/TITAN':
             if os.path.exists('TITAN'):
                 os.chdir('TITAN')
-                dir = os.getcwd()
+                directory = os.getcwd()
             else:
                 print('Error TITAN Directory not found!')
 
-        titanfile=dir + '/TITAN_' + inputfile
+        titanfile=directory + '/TITAN_' + inputfile
 
         with open(titanfile, 'w') as configfile:
             cfg_titan.write(configfile)
@@ -277,7 +277,7 @@ def runWrapper(inputfile):
 
         print('Finished!')
         # Let's check the result
-        data_csv = dir + '/'+cfg_titan['Options']['Output_folder']+'/Data/data.csv'
+        data_csv = directory + '/'+cfg_titan['Options']['Output_folder']+'/Data/data.csv'
 
         with open(data_csv, 'r') as file:
             data = pd.read_csv(file)

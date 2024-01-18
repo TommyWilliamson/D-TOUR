@@ -10,11 +10,16 @@ from matplotlib import pyplot as plt
 import pickle
 import datetime as dt
 import statistics
+from mpi4py import MPI
+import math
 
 mcm = swami.MCM()
 cfg = configparser.ConfigParser()
+comm = MPI.COMM_WORLD
 
-n_cores = 22
+rank = comm.Get_rank()
+n_cores = comm.Get_size()
+
 
 def vanillaMC(states,cfgfile,forecast):
     nSamples = max(states.shape) #note only work for n>6
@@ -24,7 +29,7 @@ def vanillaMC(states,cfgfile,forecast):
     toutput = np.empty(shape=[nSamples])
     cost = []
 
-    
+
     for i in range(nSamples):
         then=dt.datetime.now()
         stateOut, hOut, tOut, _, _ = propagator.runPropagator(state=states[:,i], forecast=forecast,
@@ -41,24 +46,6 @@ def vanillaMC(states,cfgfile,forecast):
         print('\n\n',100 * i / nSamples, '%\n\n')
     return output, houtput, toutput, cost
 def getStats(inputfile,deltaT,nSamples):
-    cfg.read(inputfile)
-    cfg_orb = cfg
-    cfg_orb['Propagator']['Prop_timestep'] = str(deltaT)
-    cfg_orb['Propagator']['Progress_checkin'] = str(10)
-    cfg_orb['Propagator']['Density_criterion'] = str(1e4)
-    cfg_orb['Propagator']['Altitude_criterion'] = '2000'
-    cfg_orb['Propagator']['Critical_altitude'] = '0'
-    cfg_orb['Propagator']['Checkpoint_value'] = str(3e6)
-
-    dir = os.getcwd()
-
-    if not os.path.exists(dir + '/DTOURtemp'):
-        os.makedirs(dir + '/DTOURtemp')
-
-    # Then write to a temp cfg file
-    filepath = dir + '/DTOURtemp/CVTemp.cfg'
-    with open(filepath, 'w') as configfile:
-        cfg_orb.write(configfile)
 
     eccentricity = 0.001
     argument_of_periapsis = 0.0
@@ -71,8 +58,39 @@ def getStats(inputfile,deltaT,nSamples):
     mu_LAN = 0.0
     sigma_LAN = 1.0
 
-    states=np.empty(shape=[6,nSamples])
-    alts = np.empty(shape=[nSamples])
+    if rank ==0:
+        cfg.read(inputfile)
+        cfg_orb = cfg
+        cfg_orb['Propagator']['Prop_timestep'] = str(deltaT)
+        cfg_orb['Propagator']['Progress_checkin'] = str(10)
+        cfg_orb['Propagator']['Density_criterion'] = str(1e4)
+        cfg_orb['Propagator']['Altitude_criterion'] = '2000'
+        cfg_orb['Propagator']['Critical_altitude'] = '0'
+        cfg_orb['Propagator']['Checkpoint_value'] = str(3e6)
+
+        dir = os.getcwd()
+
+        if not os.path.exists(dir + '/DTOURtemp'):
+            os.makedirs(dir + '/DTOURtemp')
+
+        # Then write to a temp cfg file
+        filepath = dir + '/DTOURtemp/CVTemp.cfg'
+        with open(filepath, 'w') as configfile:
+            cfg_orb.write(configfile)
+
+
+
+        #states=np.empty(shape=[6,nSamples])
+        #alts = np.empty(shape=[nSamples])
+        MPI_samples=math.floor(nSamples/n_cores)
+        startIndex = 0
+        endIndex = MPI_samples
+        for i in range(n_cores):
+            comm.send(obj=startIndex,dest=i,tag=0)
+            startIndex
+    comm.scatter(range(nSamples),root=0)
+    states = comm.gather(states,root=0)
+    else:
 
 
     for i in range(nSamples):
